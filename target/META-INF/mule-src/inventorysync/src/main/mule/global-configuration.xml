@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<configuration-properties doc:name="connection properties" doc:id="0d25e8ee-798e-4401-97a8-b45cff2ebd94" file="properties/${mule.env}.properties" />
+	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="98a6d2e3-292b-4913-b74d-dbec9810456a" >
+		<sftp:connection host="${sftp.host}" username="${sftp.username}" password="${sftp.password}" port="${sftp.port}">
+			<pooling-profile maxActive="10" />
+		</sftp:connection>
+	</sftp:config>
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="b3032222-5408-4220-b84c-d0e6fc698ee2" >
+		<email:smtp-connection host="${smtp.host}" port="${smtp.port}" user="${smtp.username}" password="${smtp.password}" />
+	</email:smtp-config>
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="e4777200-509f-43ca-a0b9-f9401ba7e1b0" entryTtl="8" entryTtlUnit="HOURS" expirationInterval="8" expirationIntervalUnit="HOURS" />
+
+</mule>

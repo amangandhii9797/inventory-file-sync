@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<sub-flow name="inventory-file-sync-implementation-subflow" doc:id="a1791039-2135-46ba-9a38-6a273275f2f7" >
+		<until-successful maxRetries="5" doc:name="Until Successful" doc:id="dc0cbbaf-268f-4c50-bd8f-5d47c993abca" >
+			<try doc:name="Try" doc:id="41780ff8-5000-4581-ba5e-55d3e127cb23" >
+				<sftp:list doc:name="List all files in Input Folder" doc:id="4873e6f1-0aee-4507-b808-961e160853d1" config-ref="SFTP_Config" directoryPath="/data/Input" />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ff02332c-a91d-40d8-a5e8-af58468c4bc7" type="SFTP:ILLEGAL_PATH, SFTP:RETRY_EXHAUSTED, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+						<logger level="INFO" doc:name="Logging System Error " doc:id="83c53af4-909e-41c2-bc14-0696d919b3b1" message='#["Error description" ++ error.description default ""]'/>
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</until-successful>
+		<choice doc:name="File Present/Not" doc:id="c99d04f6-a022-4f28-a2fd-0f07c2134367" >
+			<when expression="#[isEmpty(payload)]">
+				<ee:transform doc:name="Prepare No File Email" doc:id="a96f8f05-452f-498c-b92e-3aa693c910d0" >
+					<ee:message >
+						<ee:set-payload resource="dataweave/noFileEmailNotification.dwl" />
+					</ee:message>
+				</ee:transform>
+				<flow-ref doc:name="send-email-alert" doc:id="ddc8d336-640b-4137-9afb-778ccd5363ee" name="send-email-alert"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Set fileName and today variable" doc:id="509e1134-af41-475b-b7b1-f0ac9ffa19c3">
+					<ee:message>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="filePath" ><![CDATA[%dw 2.0
+output application/json
+---
+payload[0].payload]]></ee:set-variable>
+						<ee:set-variable variableName="today" ><![CDATA[%dw 2.0
+output application/java
+---
+now() as Date {format: "dd-MM-yyyy"}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<until-successful maxRetries="5" doc:name="Until Successful" doc:id="d24c976b-975f-456c-ae64-fe8b44ec85e4">
+						<try doc:name="Try" doc:id="0324368d-8c4b-49a7-8156-bb790d184b89">
+							<sftp:create-directory config-ref="SFTP_Config" directoryPath="#['/data/Output/' ++ now() as Date {format: 'dd-MM-yyyy'}]" />
+							<error-handler>
+								<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ed768a0c-a98d-4c4a-9460-6aa8afe5d5aa" type="SFTP:FILE_ALREADY_EXISTS, SFTP:ILLEGAL_PATH, SFTP:RETRY_EXHAUSTED, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+									<logger level="INFO" doc:name="Logging System Error " doc:id="448f2b1e-2f46-4442-8fe2-7ee40743307b" message='#["Error description" ++ error.description default ""]' />
+								</on-error-continue>
+							</error-handler>
+						</try>
+					</until-successful>
+				<flow-ref doc:name="inventory-file-sync-implementationFlow" doc:id="6a8763cf-40e6-423f-b28c-09eacaf67934" name="inventory-file-sync-implementationFlow" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<flow name="inventory-file-sync-implementationFlow" doc:id="247990d2-ac96-4fcc-88b8-6b7c70d9de35" >
+		<logger level="INFO" doc:name="Logging Start time" doc:id="adc3f12b-7eb9-414d-b2e8-ece1ea6dc11c" message='#["Start time = " ++ now()]'/>
+		<until-successful maxRetries="${errorHandling.maxRetries}" doc:name="Until Successful" doc:id="7cc1c1c1-c617-4983-a706-57416d458351" millisBetweenRetries="${errorHandling.retryDelay}">
+			<try doc:name="Try" doc:id="7edc0414-5479-4403-9bfc-470a617b16f8" >
+				<sftp:read doc:name="Read file" doc:id="6fd81ed4-3748-4e70-802d-14c45aeb0085" config-ref="SFTP_Config" path="#[vars.filePath]" outputMimeType="application/csv; streaming=true">
+				<ee:repeatable-file-store-stream inMemorySize="30" bufferUnit="MB" />
+				<reconnect blocking="false" />
+		</sftp:read>
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="51bc1998-1de3-4b8e-82c3-0505d0a2ab2e" type="SFTP:ILLEGAL_PATH, SFTP:RETRY_EXHAUSTED, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+						<logger level="INFO" doc:name="Logging System Error " doc:id="5a968f56-03f0-4658-b796-8c2763abb6b8" message='#["Error description" ++ error.description default ""]'/>
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</until-successful>
+		<logger level="INFO" doc:name="Logging Read time" doc:id="d0074b8d-a8c9-44ee-ab89-c70d56d21eaf" message='#["Read time " ++ now()]' />
+		<batch:job jobName="inventory-file-sync-implementationBatch_Job" doc:id="5020b4e8-c324-4b6d-aadd-46d557009535" blockSize="${batch.blockSize}" maxFailedRecords="-1">
+			<batch:process-records >
+				<batch:step name="Batch_Step1_validate_records_and_create_files" doc:id="eb3e0946-30c0-45e3-883a-6fc1c88c48fb">
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="6ee0fb5a-59ac-428f-accc-57fa5a01a9ba" preserveMimeTypes="true" size="${batch.aggregatorSize}">
+						<ee:transform doc:name="Data validation check" doc:id="62b4d598-dfd5-43e7-90cb-8adf8398f2d3">
+							<ee:message />
+							<ee:variables>
+								<ee:set-variable resource="dataweave/dataValidation.dwl" variableName="validation" />
+							</ee:variables>
+						</ee:transform>
+						<choice doc:name="Filter Valid/Invalid" doc:id="627ebd3b-1494-40b4-9376-9edc4b7f6aaf">
+							<when expression="#[sizeOf(vars.validation.isValid) &gt; 0]">
+								<ee:transform doc:name="create errorRecords" doc:id="5d68d1c7-baba-464a-ab33-5fc6b8f16427">
+									<ee:message>
+									</ee:message>
+									<ee:variables>
+										<ee:set-variable variableName="errorRecords"><![CDATA[%dw 2.0
+output application/java
+---
+vars.validation.isValid map ((item, index) ->
+    (item.errorRecord) ++" : " ++ (item.errors joinBy  ",")) ]]></ee:set-variable>
+									</ee:variables>
+								</ee:transform>
+								<os:retrieve doc:name="Retrieve allErrors" doc:id="e197d05a-9494-4822-a3eb-d3fa54bf6c7d" key="allErrors" objectStore="Object_store" target="existingErrors">
+									<os:default-value><![CDATA[#[[]]]]></os:default-value>
+								</os:retrieve>
+								<os:store doc:name="Store new errors to allErrors" doc:id="06cdd068-be9d-4e14-bd0d-be9724ff19e1" key="allErrors">
+									<os:value><![CDATA[#[%dw 2.0
+output application/json
+---
+vars.errorRecords ++ vars.existingErrors]]]></os:value>
+								</os:store>
+							</when>
+						</choice>
+						<ee:transform doc:name="Filter bad records" doc:id="73edb3b6-7804-4e6a-8f1b-02e63570c7d4">
+						<ee:message>
+								<ee:set-payload resource="dataweave/filterBadRecords.dwl" />
+						</ee:message>
+					</ee:transform>
+						<ee:transform doc:name="Group payload based on store Id" doc:id="9cca6981-f35f-49ab-bb39-a7779dd5fe93">
+							<ee:message>
+								<ee:set-payload resource="dataweave/groupByStoreId.dwl" />
+							</ee:message>
+						</ee:transform>
+						<until-successful maxRetries="${errorHandling.maxRetries}" doc:name="Until Successful" doc:id="244185fe-0af5-4b54-8160-e12f78532287" millisBetweenRetries="${errorHandling.retryDelay}">
+							<try doc:name="Try" doc:id="285b38de-4ded-45b8-b9e3-ca911d290399" >
+								<sftp:list doc:name="List existing files in Output folder for today" doc:id="766ccaea-fb10-4ba4-ab9e-7898a91e6599" config-ref="SFTP_Config" directoryPath="#['/data/Output/' ++ vars.today]" target="outputListResponse" />
+								<error-handler>
+									<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="1f96fe40-0624-4a33-ba15-cda8e54c18b9" type="SFTP:ILLEGAL_PATH, SFTP:RETRY_EXHAUSTED, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+										<logger level="INFO" doc:name="Logging System Error " doc:id="b8e3a67b-accf-4db5-af0f-7a613ea0e37e" message='#["Error description" ++ error.description default ""]' />
+									</on-error-continue>
+								</error-handler>
+							</try>
+						</until-successful>
+						<foreach doc:name="For Each" doc:id="abd68cfd-1ada-4f37-82f3-7732caca9647" collection="#[payload]">
+							<choice doc:name="Records Append/ Create " doc:id="9dc543d2-99a9-45e2-ba28-534b9348c769">
+				<when expression="#[vars.outputListResponse..name contains (payload.fileName)]">
+									<until-successful maxRetries="5" doc:name="Until Successful" doc:id="805ad465-0cb5-412b-9c70-89e067654b13" >
+										<try doc:name="Try" doc:id="ed3b57c3-79c7-49a0-9c0c-5f2b7e075f72" >
+											<sftp:write doc:name="Append to Existing File" doc:id="a7d1ba26-4683-4126-9e9a-c66387b97ab3" config-ref="SFTP_Config" path="#['/data/Output/' ++ vars.today ++ '/' ++ payload.fileName]" createParentDirectories="false" mode="APPEND" bufferSizeForWriteStrategy="BUFFER_SIZE_16KB">
+									<sftp:content><![CDATA[#[payload.withoutHeader]]]></sftp:content>
+								</sftp:write>
+											<error-handler >
+												<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="04bd98f5-dad8-462b-b262-7245234d75bf" type="SFTP:ILLEGAL_PATH, SFTP:RETRY_EXHAUSTED, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+													<logger level="INFO" doc:name="Logging System Error " doc:id="02cc715f-2f02-48c7-a60a-664bf2fe0faf" message='#["Error description" ++ error.description default ""]'/>
+												</on-error-continue>
+											</error-handler>
+										</try>
+									</until-successful>
+				</when>
+								<otherwise>
+									<until-successful maxRetries="5" doc:name="Until Successful" doc:id="035b512b-2749-4951-9eec-54ed9af9a97f" >
+										<try doc:name="Try" doc:id="f737cde8-8de0-4be0-8856-6173bec97e11" >
+											<sftp:write doc:name="Create New File with Header" doc:id="984b36b8-9c49-4a64-ba8d-98bb07d446f8" config-ref="SFTP_Config" path="#['/data/Output/' ++ vars.today ++ '/' ++ payload.fileName]" mode="APPEND">
+									<sftp:content><![CDATA[#[payload.withHeader]]]></sftp:content>
+								</sftp:write>
+											<error-handler >
+												<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="2aa1ea81-b8ba-47b6-b8af-7d9ac8ec1bfd" type="SFTP:ILLEGAL_PATH, SFTP:RETRY_EXHAUSTED, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+													<logger level="INFO" doc:name="Logging System Error " doc:id="d329e368-332b-41f8-9be6-edf4467bb290" message='#["Error description" ++ error.description default ""]'/>
+												</on-error-continue>
+											</error-handler>
+										</try>
+									</until-successful>
+				</otherwise>
+			</choice>
+						</foreach>
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<os:retrieve doc:name="Retrieve allErrors" doc:id="31549acb-6fbc-4ef1-a701-330c7a426b7d" key="allErrors">
+					<os:default-value ><![CDATA[#[[]]]]></os:default-value>
+				</os:retrieve>
+				<ee:transform doc:name="Prepare error records email" doc:id="d37004cc-1396-4530-8e90-dc8abe75bfab" >
+					<ee:message >
+						<ee:set-payload resource="dataweave/prepareErrorNotificationEmail.dwl" />
+					</ee:message>
+				</ee:transform>
+				<flow-ref doc:name="send-email-alert" doc:id="c5db6696-659f-4f16-aa01-e50b57e138c0" name="send-email-alert" />
+				<logger level="INFO" doc:name="Loging End time" doc:id="a2639c56-eff9-40ea-ae5a-c114a76164a1" message='#["End time = " ++ now()]' />
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+</mule>

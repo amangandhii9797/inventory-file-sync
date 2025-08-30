@@ -1,0 +1,17 @@
+[
+  {
+    "exceptionPayload": null,
+    "payload": "/data/Input/full_inventory_12-13-23.csv",
+    "attributes": {
+      "fileName": "full_inventory_12-13-23.csv",
+      "symbolicLink": false,
+      "regularFile": true,
+      "directory": false,
+      "path": "/data/Input/full_inventory_12-13-23.csv",
+      "size": 566,
+      "permissions": 33204,
+      "name": "full_inventory_12-13-23.csv",
+      "timestamp": "2025-08-29T15:47:18+05:30"
+    }
+  }
+]

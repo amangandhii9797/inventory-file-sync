@@ -1,0 +1,47 @@
+{
+  "configs": [
+    "gloabl-error-handler.xml",
+    "inventory-file-sync-scheduler.xml",
+    "common-subflows.xml",
+    "inventory-file-sync-implementation.xml",
+    "global-configuration.xml"
+  ],
+  "secureProperties": [
+    "anypoint.platform.client_secret",
+    "sftp.password"
+  ],
+  "supportedJavaVersions": [],
+  "redeploymentEnabled": true,
+  "name": "com.mycompany:inventorysync:1.0.0-SNAPSHOT",
+  "minMuleVersion": "4.6.0",
+  "requiredProduct": "MULE_EE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedPackages": [],
+      "exportedResources": [
+        "log4j2.xml",
+        "application-types.xml",
+        "dataweave/systemError.dwl",
+        "dataweave/dataValidation.dwl",
+        "dataweave/prepareErrorNotificationEmail.dwl",
+        "dataweave/filterBadRecords.dwl",
+        "dataweave/noFileEmailNotification.dwl",
+        "dataweave/error/msg-errorMessage.dwl",
+        "dataweave/groupByStoreId.dwl",
+        "inventory-file-sync-scheduler.xml",
+        "properties/qa.properties",
+        "properties/dev.properties",
+        "properties/prod.properties",
+        "common-subflows.xml",
+        "gloabl-error-handler.xml",
+        "inventory-file-sync-implementation.xml",
+        "global-configuration.xml"
+      ]
+    }
+  },
+  "bundleDescriptorLoader": {
+    "id": "mule",
+    "attributes": {}
+  }
+}

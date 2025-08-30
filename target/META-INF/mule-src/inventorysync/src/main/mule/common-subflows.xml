@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
+	<sub-flow name="send-email-alert" doc:id="e72ef05f-547c-4f13-9fc9-6c24e1641c8b" >
+		<until-successful maxRetries="${errorHandling.maxRetries}" doc:name="Until Successful Email" doc:id="29446070-3b98-41cb-890f-7c2059ab29db" millisBetweenRetries="${errorHandling.retryDelay}" >
+			<email:send doc:name="Send No File Email" doc:id="cdb02463-f291-4af2-bb03-25ec86af54a1" config-ref="Email_SMTP" fromAddress="${email.smtp.fromAddress}" subject="Alert: No Input Files Found On - #[now() as String {format: 'yyyy-MM-dd'}]" >
+				<email:to-addresses >
+					<email:to-address value="${email.recipients.backendSupport}" />
+				</email:to-addresses>
+				<email:body contentType="text/plain" />
+			</email:send>
+		</until-successful>
+	</sub-flow>
+
+
+
+	
+</mule>

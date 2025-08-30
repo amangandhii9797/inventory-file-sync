@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="inventory-file-sync-scheduler-test-suite.xml" />
+	<munit:test name="inventory-file-sync-scheduler-test-suite-inventory-file-sync-scheduler-flowTest-success-scenario" doc:id="d21dd0c6-e077-4387-8bfb-4c26d93d1108" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock List" doc:id="5e92c1a9-20d0-462f-ad1a-556e8b729bd0" processor="sftp:list">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="List all files in Input Folder" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="4873e6f1-0aee-4507-b808-961e160853d1" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+					<munit-tools:with-attribute whereValue="/data/Input" attributeName="directoryPath" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[readUrl("classpath://sampleInput/listInputResponse.json")]' mediaType="application/java" />
+					<munit-tools:variables >
+						<munit-tools:variable key="today" value='#["2025-08-29T11:04:45.8804Z"]' mediaType="application/java" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock Create Directory" doc:id="08426913-9c1b-477b-8e46-1c111860fa17" processor="sftp:create-directory">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+					<munit-tools:with-attribute whereValue="#['/data/Output/' ++ now() as Date {format: 'dd-MM-yyyy'}]" attributeName="directoryPath" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock Read" doc:id="ec6acf44-1f8b-460b-bd88-c7673ce690c1" processor="sftp:read">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Read file" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="6fd81ed4-3748-4e70-802d-14c45aeb0085" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[readUrl("classpath://sampleInput/readFileResponse.csv","application/csv")]' mediaType="application/java" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock Retrieve" doc:id="fc97df80-8c6c-482c-8e80-5eda7a52d342" processor="os:retrieve">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="e197d05a-9494-4822-a3eb-d3fa54bf6c7d" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="allErrors" attributeName="key" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock Store" doc:id="25c6f4c9-51bb-415c-b8d2-530aa5262714" processor="os:store">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Store new errors to allErrors" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="06cdd068-be9d-4e14-bd0d-be9724ff19e1" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="allErrors" attributeName="key" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock List Output" doc:id="91ed941d-eed4-4590-8633-0f11e6622e45" processor="sftp:list">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="List existing files in Output folder for today" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="766ccaea-fb10-4ba4-ab9e-7898a91e6599" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock Write" doc:id="d4367c1a-532e-419d-9361-f11a45313855" processor="sftp:write">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Create New File with Header" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="984b36b8-9c49-4a64-ba8d-98bb07d446f8" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock Retrieve " doc:id="1a458eb6-858b-466d-bf44-7e4bab21ce34" processor="os:retrieve">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Retrieve allErrors" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="31549acb-6fbc-4ef1-a701-330c7a426b7d" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="allErrors" attributeName="key" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock Send Email Notification" doc:id="bc1b34a1-1fb6-4d49-a179-310941a8448a" processor="flow-ref">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="send-email-alert" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="c5db6696-659f-4f16-aa01-e50b57e138c0" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="send-email-alert" attributeName="name" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to inventory-file-sync-scheduler-flow" doc:id="7d9853f4-c5d9-4bed-b5f7-387745d9eecd" name="inventory-file-sync-scheduler-flow"/>
+			<munit-tools:sleep time="30" doc:name="Sleep for 30 sec" doc:id="1d9498e0-ed79-4b68-a86c-502380cd2eca" timeUnit="SECONDS" />
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="080510ea-c9a8-45b3-8b3b-9d1b49e59155" is="#[MunitTools::notNullValue()]" expression="#[payload]"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="inventory-file-sync-scheduler-test-suite-inventory-file-sync-scheduler-flowTest-no-file-exist" doc:id="aaa0f2b7-1367-4ed2-93d7-c44f237da286" description="Test" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock List " doc:id="67e63fed-b33a-4e37-80a4-51b0c9360b28" processor="sftp:list" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="4873e6f1-0aee-4507-b808-961e160853d1" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+					<munit-tools:with-attribute whereValue="/data/Input" attributeName="directoryPath" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock email notification" doc:id="7a94cd75-f1eb-4a14-893a-c1820dc53526" processor="email:send" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="cdb02463-f291-4af2-bb03-25ec86af54a1" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="Email_SMTP" attributeName="config-ref" />
+					<munit-tools:with-attribute whereValue="${email.smtp.fromAddress}" attributeName="fromAddress" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to inventory-file-sync-scheduler-flow" doc:id="a62da772-1151-49ca-88df-2a9734f3154f" name="inventory-file-sync-scheduler-flow" />
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Verify call" doc:id="3c372059-1f9e-4b5a-b654-02b4d797c592" processor="email:send">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="cdb02463-f291-4af2-bb03-25ec86af54a1" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="Email_SMTP" attributeName="config-ref" />
+					<munit-tools:with-attribute whereValue="${email.smtp.fromAddress}" attributeName="fromAddress" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="inventory-file-sync-scheduler-test-suite-inventory-file-sync-scheduler-flowTest-connectivity-error" doc:id="b897d109-0948-483d-b686-cc8ea667503a" description="Test" expectedErrorType="SFTP:CONNECTIVITY">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock sftp list" doc:id="dc48edd4-a2a7-4817-9b73-e4c88a1b17f7" processor="sftp:list">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="List all files in Input Folder" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="4873e6f1-0aee-4507-b808-961e160853d1" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="SFTP_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="SFTP:CONNECTIVITY" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock send error notification" doc:id="adddc097-23b4-4bd7-a412-968d1780ce9e" processor="email:send">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Send No File Email" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="8d1b2b4f-684e-4a13-ab89-cbbd9d07890d" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="Email_SMTP" attributeName="config-ref" />
+					<munit-tools:with-attribute whereValue="${email.smtp.fromAddress}" attributeName="fromAddress" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to inventory-file-sync-scheduler-flow" doc:id="f7ca62ea-bc4d-4616-90c2-5043b877fcde" name="inventory-file-sync-scheduler-flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Verify call" doc:id="cfd140ec-f49b-42ed-b4f0-0a72c0f85eb3" processor="email:send">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Send No File Email" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="8d1b2b4f-684e-4a13-ab89-cbbd9d07890d" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="Email_SMTP" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+
+</mule>

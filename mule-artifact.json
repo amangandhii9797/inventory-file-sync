@@ -1,0 +1,10 @@
+{
+  "minMuleVersion": "4.6.0",
+  "secureProperties":[
+  	"anypoint.platform.client_secret",
+  	"sftp.password"
+  ],
+  "javaSpecificationVersions": [
+    "17"
+  ]
+}
